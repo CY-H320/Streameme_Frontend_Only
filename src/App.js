@@ -139,9 +139,9 @@ const VideoMemeAnalyzer = () => {
           suggestions: (data.suggestions || []).map((suggestion) => ({
             timestamp: suggestion.start,
             end_timestamp: suggestion.end,
-            meme_category: suggestion.suggestion,
-            meme_file: getRandomMeme(suggestion.suggestion.toLowerCase()),
-            description: getCategoryDescription(suggestion.suggestion),
+            meme_category: suggestion.meme_type_desc,
+            meme_file: getRandomMeme(suggestion.meme_type_desc),
+            description: getCategoryDescription(suggestion.meme_type_desc),
             confidence: Math.random() * 0.3 + 0.7,
           })),
         };
@@ -162,7 +162,7 @@ const VideoMemeAnalyzer = () => {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Upload failed. Please check your internet connection.");
+      alert("Upload failed.");
     } finally {
       setIsUploading(false);
     }
@@ -190,7 +190,7 @@ const VideoMemeAnalyzer = () => {
   return (
     <div className="app">
       <div className="container">
-        <h1 className="main-title">AI Video Meme Analyzer</h1>
+        <h1 className="main-title">Streameme</h1>
 
         {/* Upload Section */}
         <div className="upload-section">
@@ -313,10 +313,7 @@ const VideoMemeAnalyzer = () => {
                             </div>
                           </div>
                           <div className="suggestion-right">
-                            <span className="confidence-score">
-                              {Math.round(suggestion.confidence * 100)}% match
-                            </span>
-                            <Image className="meme-icon" />
+                            <img alt="suggested meme" src={`${suggestion.meme_file}`} />
                           </div>
                         </div>
                       </div>
