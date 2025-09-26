@@ -287,37 +287,39 @@ const VideoMemeAnalyzer = () => {
                 </h2>
                 <div className="suggestions-list">
                   {results.suggestions.length > 0 ? (
-                    results.suggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        onClick={() => jumpToTimestamp(suggestion.timestamp)}
-                        className="suggestion-item"
-                      >
-                        <div className="suggestion-content">
-                          <div className="suggestion-left">
-                            <div className="timestamp-badge">
-                              {formatTime(suggestion.timestamp)} -{" "}
-                              {formatTime(suggestion.end_timestamp)}
-                            </div>
-                            <div className="suggestion-details">
-                              <div className="meme-name">
-                                {suggestion.meme_file
-                                  .replace(".jpg", "")
-                                  .replace("_", " ")}{" "}
-                                Meme
+                    [...results.suggestions]
+                      .sort((a, b) => a.timestamp - b.timestamp) // ✅ chronological order
+                      .map((suggestion, index) => (
+                        <div
+                          key={index}
+                          onClick={() => jumpToTimestamp(suggestion.timestamp)}
+                          className="suggestion-item"
+                        >
+                          <div className="suggestion-content">
+                            <div className="suggestion-left">
+                              <div className="timestamp-badge">
+                                {formatTime(suggestion.timestamp)} –{" "}
+                                {formatTime(suggestion.end_timestamp)}
                               </div>
-                              <div className="meme-description">
-                                Category: {suggestion.meme_category} -{" "}
-                                {suggestion.description}
+                              <div className="suggestion-details">
+                                <div className="meme-name">
+                                  {suggestion.meme_category} 
+                                </div>
+                                <div className="meme-description">
+                                  Category: {suggestion.meme_category} –{" "}
+                                  {suggestion.description}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="suggestion-right">
-                            <img alt="suggested meme" src={`${suggestion.meme_file}`} />
+                            <div className="suggestion-right">
+                              <img
+                                alt="suggested meme"
+                                src={`${suggestion.meme_file}`}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))
                   ) : (
                     <p>No suggestions found.</p>
                   )}
@@ -356,9 +358,7 @@ const VideoMemeAnalyzer = () => {
                           className="meme-thumbnail"
                         />
                       ))}
-                      <span>
-                        +{memeLibrary[cat.type].length - 15} more
-                      </span>
+                      <span>+{memeLibrary[cat.type].length - 15} more</span>
                     </div>
                   </div>
                 ))}
