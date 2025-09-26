@@ -348,16 +348,16 @@ const VideoMemeAnalyzer = () => {
 
                     {/* Thumbnail browser for each category */}
                     <div className="meme-thumbnails">
-                      {memeLibrary[cat.type].slice(0, 3).map((file, idx) => (
+                      {memeLibrary[cat.type].slice(0, 15).map((file, idx) => (
                         <img
                           key={idx}
                           src={`/memes/${cat.type}/${file}`}
                           alt={file}
-                          className="w-6 h-6 object-cover rounded m-1"
+                          className="meme-thumbnail"
                         />
                       ))}
-                      <span className="text-sm text-gray-500">
-                        +{memeLibrary[cat.type].length - 3} more
+                      <span>
+                        +{memeLibrary[cat.type].length - 15} more
                       </span>
                     </div>
                   </div>

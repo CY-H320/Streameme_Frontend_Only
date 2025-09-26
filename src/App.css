@@ -367,6 +367,22 @@
   font-size: 0.875rem;
 }
 
+.meme-thumbnails {
+  column-count: 3;         /* number of vertical columns */
+  column-gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  color: white;
+  padding-top: 10px;
+}
+
+.meme-thumbnail {
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  display: block;
+}
+
 .meme-type-badge {
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
