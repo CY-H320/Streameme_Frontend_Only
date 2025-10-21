@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Upload,
   Play,
@@ -93,6 +93,15 @@ const VideoMemeAnalyzer = () => {
   const [results, setResults] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const videoRef = useRef(null);
+  const [activeMeme, setActiveMeme] = useState(null);
+  const memeTimeoutRef = useRef(null);
+  const OVERLAY_DURATION = 10000; // 10s
+
+  useEffect(() => {
+    return () => {
+      if (memeTimeoutRef.current) clearTimeout(memeTimeoutRef.current);
+    };
+  }, []);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -168,11 +177,29 @@ const VideoMemeAnalyzer = () => {
     }
   };
 
-  const jumpToTimestamp = (timestamp) => {
+  const jumpToTimestamp = (timestamp, memeFile) => {
     if (videoRef.current) {
       videoRef.current.currentTime = timestamp;
       videoRef.current.play();
     }
+
+    // Clear any existing timeout so new click restarts timer
+    if (memeTimeoutRef.current) {
+      clearTimeout(memeTimeoutRef.current);
+      memeTimeoutRef.current = null;
+    }
+
+    // Force re-render even if same meme clicked again
+    setActiveMeme(null);
+    setTimeout(() => {
+      setActiveMeme(memeFile);
+    }, 0);
+
+    // Hide after duration
+    memeTimeoutRef.current = setTimeout(() => {
+      setActiveMeme(null);
+      memeTimeoutRef.current = null;
+    }, OVERLAY_DURATION);
   };
 
   const getCategoryDescription = (category) => {
@@ -191,60 +218,6 @@ const VideoMemeAnalyzer = () => {
     <div className="app">
       <div className="container">
         <h1 className="main-title">Streameme</h1>
-
-        {/* Upload Section */}
-        <div className="upload-section">
-          <div className="file-upload-area">
-            <label className="file-upload-label">
-              <div className="file-upload-content">
-                <Upload className="upload-icon" />
-                <p className="upload-text">
-                  <span className="upload-text-bold">Click to upload</span> or
-                  drag and drop
-                </p>
-                <p className="upload-subtext">MP4, AVI, MOV files supported</p>
-              </div>
-              <input
-                type="file"
-                className="file-input"
-                accept="video/*"
-                onChange={handleFileSelect}
-              />
-            </label>
-          </div>
-
-          {selectedFile && (
-            <div className="file-info">
-              <div className="file-details">
-                <FileVideo className="file-icon" />
-                <div className="file-info-text">
-                  <span className="file-name">{selectedFile.name}</span>
-                  <span className="file-size">
-                    ({formatFileSize(selectedFile.size)})
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={handleUpload}
-                disabled={isUploading}
-                className={`upload-button ${isUploading ? "uploading" : ""}`}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="button-icon spinning" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="button-icon" />
-                    Analyze Video
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
         {/* Processing Complete */}
         {results && (
           <div className="success-message">
@@ -259,75 +232,6 @@ const VideoMemeAnalyzer = () => {
         )}
 
         <div className="content-grid">
-          {/* Video Player */}
-          <div className="video-section">
-            {videoUrl && (
-              <div className="video-player-container">
-                <h2 className="section-title">
-                  <Play className="section-icon" />
-                  Video Player
-                </h2>
-                <video
-                  ref={videoRef}
-                  src={videoUrl}
-                  controls
-                  className="video-player"
-                >
-                  Your browser does not support video playback.
-                </video>
-              </div>
-            )}
-
-            {/* AI Suggestions Timeline */}
-            {results && (
-              <div className="suggestions-container">
-                <h2 className="section-title">
-                  <Clock className="section-icon" />
-                  AI Suggestions
-                </h2>
-                <div className="suggestions-list">
-                  {results.suggestions.length > 0 ? (
-                    [...results.suggestions]
-                      .sort((a, b) => a.timestamp - b.timestamp) // ✅ chronological order
-                      .map((suggestion, index) => (
-                        <div
-                          key={index}
-                          onClick={() => jumpToTimestamp(suggestion.timestamp)}
-                          className="suggestion-item"
-                        >
-                          <div className="suggestion-content">
-                            <div className="suggestion-left">
-                              <div className="timestamp-badge">
-                                {formatTime(suggestion.timestamp)} –{" "}
-                                {formatTime(suggestion.end_timestamp)}
-                              </div>
-                              <div className="suggestion-details">
-                                <div className="meme-name">
-                                  {suggestion.meme_category} 
-                                </div>
-                                <div className="meme-description">
-                                  Category: {suggestion.meme_category} –{" "}
-                                  {suggestion.description}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="suggestion-right">
-                              <img
-                                alt="suggested meme"
-                                src={`${suggestion.meme_file}`}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <p>No suggestions found.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Meme Library */}
           <div className="sidebar">
             <div className="meme-library">
@@ -379,6 +283,148 @@ const VideoMemeAnalyzer = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Video Player */}
+          <div className="video-section">
+            <div className="video-player-container">
+              <h2 className="section-title">
+                <Play className="section-icon" />
+                Video Player
+              </h2>
+
+              <div className="video-wrapper">
+                {videoUrl ? (
+                  <>
+                    <video
+                      ref={videoRef}
+                      src={videoUrl}
+                      controls
+                      className="video-player"
+                    >
+                      Your browser does not support video playback.
+                    </video>
+
+                    {activeMeme && (
+                      <div className="meme-overlay" aria-hidden="true">
+                        <img src={activeMeme} alt="Displayed meme" />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="video-upload-placeholder">
+                    <label className="file-upload-label">
+                      <div className="file-upload-content">
+                        <Upload className="upload-icon" />
+                        <p className="upload-text">
+                          <span className="upload-text-bold">
+                            Click to upload
+                          </span>{" "}
+                          or drag and drop
+                        </p>
+                        <p className="upload-subtext">
+                          MP4, AVI, MOV files supported (Max 2GB)
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="file-input"
+                        accept="video/*"
+                        onChange={handleFileSelect}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* File info and analyze button shown below video/placeholder */}
+              {selectedFile && (
+                <div className="file-info">
+                  <div className="file-details">
+                    <FileVideo className="file-icon" />
+                    <div className="file-info-text">
+                      <span className="file-name">{selectedFile.name}</span>
+                      <span className="file-size">
+                        ({formatFileSize(selectedFile.size)})
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleUpload}
+                    disabled={isUploading}
+                    className={`upload-button ${
+                      isUploading ? "uploading" : ""
+                    }`}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="button-icon spinning" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="button-icon" />
+                        Analyze Video
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* AI Suggestions Timeline */}
+            {results && (
+              <div className="suggestions-container">
+                <h2 className="section-title">
+                  <Clock className="section-icon" />
+                  AI Suggestions
+                </h2>
+                <div className="suggestions-list">
+                  {results.suggestions.length > 0 ? (
+                    [...results.suggestions]
+                      .sort((a, b) => a.timestamp - b.timestamp) // ✅ chronological order
+                      .map((suggestion, index) => (
+                        <div
+                          key={index}
+                          onClick={() =>
+                            jumpToTimestamp(
+                              suggestion.timestamp,
+                              suggestion.meme_file
+                            )
+                          }
+                          className="suggestion-item"
+                        >
+                          <div className="suggestion-content">
+                            <div className="suggestion-left">
+                              <div className="timestamp-badge">
+                                {formatTime(suggestion.timestamp)} –{" "}
+                                {formatTime(suggestion.end_timestamp)}
+                              </div>
+                              <div className="suggestion-details">
+                                <div className="meme-name">
+                                  {suggestion.meme_category}
+                                </div>
+                                <div className="meme-description">
+                                  Category: {suggestion.meme_category} –{" "}
+                                  {suggestion.description}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="suggestion-right">
+                              <img
+                                alt="suggested meme"
+                                src={`${suggestion.meme_file}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <p>No suggestions found.</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
