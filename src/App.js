@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import MemeLibrary from "./components/MemeLibrary.jsx";
 import {
   Upload,
   Play,
@@ -96,11 +97,29 @@ const VideoMemeAnalyzer = () => {
   const [activeMeme, setActiveMeme] = useState(null);
   const memeTimeoutRef = useRef(null);
   const OVERLAY_DURATION = 10000; // 10s
+  const [memeLibrary, setMemeLibrary] = useState({});
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     return () => {
       if (memeTimeoutRef.current) clearTimeout(memeTimeoutRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    fetch("/memeLibrary.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setMemeLibrary(data);
+        setCategories(
+          Object.keys(data).map((type) => ({
+            name: type.charAt(0).toUpperCase() + type.slice(1),
+            desc: `Memes from ${type}`,
+            type,
+            color: "bg-blue-200",
+          }))
+        );
+      });
   }, []);
 
   const handleFileSelect = (e) => {
@@ -217,7 +236,7 @@ const VideoMemeAnalyzer = () => {
   return (
     <div className="app">
       <div className="container">
-        <h1 className="main-title">Streameme</h1>
+        <h1 className="main-title">StreaMeme</h1>
         {/* Processing Complete */}
         {results && (
           <div className="success-message">
@@ -235,39 +254,7 @@ const VideoMemeAnalyzer = () => {
           {/* Meme Library */}
           <div className="sidebar">
             <div className="meme-library">
-              <h2 className="section-title">
-                <Image className="section-icon" />
-                Meme Library
-              </h2>
-              <div className="meme-list">
-                {categories.map((cat, index) => (
-                  <div key={index} className="meme-item">
-                    <div className="meme-item-content">
-                      <div className="meme-info">
-                        <div className="meme-item-name">{cat.name}</div>
-                        <div className="meme-item-desc">{cat.desc}</div>
-                      </div>
-                      <div className={`meme-type-badge ${cat.color}`}>
-                        {cat.type}
-                      </div>
-                    </div>
-
-                    {/* Thumbnail browser for each category */}
-                    <div className="meme-thumbnails">
-                      {memeLibrary[cat.type].slice(0, 15).map((file, idx) => (
-                        <img
-                          key={idx}
-                          src={`/memes/${cat.type}/${file}`}
-                          alt={file}
-                          className="meme-thumbnail"
-                        />
-                      ))}
-                      <span>+{memeLibrary[cat.type].length - 15} more</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
+              <MemeLibrary categories={categories} memeLibrary={memeLibrary} />
               {results && (
                 <div className="analysis-info">
                   <h3 className="analysis-title">Analysis Complete</h3>
